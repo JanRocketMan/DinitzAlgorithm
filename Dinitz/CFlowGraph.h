@@ -19,7 +19,7 @@
 // Edge of CFlowGraph
 struct flow_edge {
 	flow_edge() = delete;
-	flow_edge(size_t _end, int _capacity, size_t index_of_reverse) : end(_end), capacity(_capacity), 
+	flow_edge(size_t _end, int _capacity, size_t index_of_reverse) : end(_end), capacity(_capacity),
 		flow(0), indexOfReverse(index_of_reverse) {}
 
 	size_t const end;
@@ -55,7 +55,7 @@ public:
 		return ans;
 	}
 
-	void DeclareEdge(size_t from, size_t to, int capacity) 
+	void DeclareEdge(size_t from, size_t to, int capacity)
 	{
 		assert(from < size && to < size && from != to);
 
@@ -71,7 +71,7 @@ public:
 	}
 
 	// AddFlow will decrease a flow on the reverse edge as well.
-	void AddFlow(size_t from, size_t to, int val) 
+	void AddFlow(size_t from, size_t to, int val)
 	{
 		assert(from < size && to < size && from != to);
 
@@ -117,8 +117,35 @@ public:
 	{
 		return size;
 	}
+
+	std::pair<std::vector<size_t>, std::vector<size_t>> GetMaxIndependentSet
+	(size_t FirstPartSize)
+	{
+		std::vector<bool> visited;
+		visited.assign(size, false);
+
+		for (auto it = G[0].out.begin(); it != G[0].out.end(); it++) {
+			if (!visited[it->end] && it->flow == 0) {
+				recurse_mark(it->end, FirstPartSize, visited);
+			}
+		}
+
+		std::vector<size_t> FirstHalf;
+		for (size_t i = 1; i < FirstPartSize; i++) {
+			if (visited[i]) {
+				FirstHalf.push_back(i);
+			}
+		}
+		std::vector<size_t> SecondHalf;
+		for (size_t i = FirstPartSize; i < size - 1; i++) {
+			if (!visited[i]) {
+				SecondHalf.push_back(i - FirstPartSize + 1);
+			}
+		}
+		return std::make_pair(FirstHalf, SecondHalf);
+	}
 private:
-	std::vector<flow_edge>::iterator findedge(size_t from, size_t to) 
+	std::vector<flow_edge>::iterator findedge(size_t from, size_t to)
 	{
 		std::vector<flow_edge>::iterator it;
 		for (it = G[from].out.begin(); it != G[from].out.end(); it++)
@@ -126,6 +153,26 @@ private:
 		return it;
 	}
 
+
+	void recurse_mark(size_t vertex, size_t FirstPartSize, std::vector<bool>& visited)
+	{
+		visited[vertex] = true;
+		for (auto it = G[vertex].out.begin(); it != G[vertex].out.end(); it++) {
+			if (!visited[it->end]) {
+
+				bool FromLeftToRight = (vertex < FirstPartSize) &&
+					(FirstPartSize <= it->end && it->end < size - 1);
+
+				bool FromRighttoLeft = (it->end < FirstPartSize) &&
+					(FirstPartSize <= vertex && vertex < size - 1) &&
+					(it->flow == -1);
+
+				if (FromLeftToRight || FromRighttoLeft) {
+					recurse_mark(it->end, FirstPartSize, visited);
+				}
+			}
+		}
+	}
 
 	std::unordered_map<size_t, point> G;
 	size_t const size;

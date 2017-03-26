@@ -1,6 +1,5 @@
 #pragma once
 #include "CFLowGraph.h"
-#include <ctime>
 #include <queue>
 #include <iostream>
 
@@ -57,33 +56,16 @@ public:
 	// lead from vertexes with distance n to vertexes with distance n + 1.
 	int FindMaxFlow()
 	{
+		for (size_t i = 0; i < N; i++) {
+			start.push_back(G.GetBegin(i));
+		}
 		int ans = 0, delta = 0;
-		float avg_bfs = 0, avg_dfs = 0;
-		std::vector<float> bfs_times, dfs_times;
-		clock_t bfs_clock = clock();
-
-		clock_t cl2 = clock();
 		while (UpdateLayer()) {
-			bfs_clock = clock() - bfs_clock;
-			bfs_times.push_back((float)(bfs_clock) / CLOCKS_PER_SEC);
 			do {
-				clock_t dfs_clock = clock();
 				delta = pushing_dfs(s, inf);
-				dfs_times.push_back((float)(clock() - dfs_clock) / CLOCKS_PER_SEC);
 				ans += delta;
 			} while (delta != 0);
-			bfs_clock = clock();
-			// times.push_back(((float) (clock() - newclock) ) / CLOCKS_PER_SEC);
 		}
-		std::cout << "Dinitz Time: " << (float)(clock() - cl2) / CLOCKS_PER_SEC << std::endl;
-		for (size_t i = 0; i < bfs_times.size(); i++) {
-			avg_bfs += (bfs_times[i] / bfs_times.size());
-		}
-		for (size_t i = 0; i < dfs_times.size(); i++) {
-			avg_dfs += (dfs_times[i] / dfs_times.size());
-		}
-		std::cout << "Total Bfs Time: " << avg_bfs << " * " << bfs_times.size() << " = " << avg_bfs * bfs_times.size() << std::endl;
-		std::cout << "Total Dfs Time: " << avg_dfs << " * " << dfs_times.size() << " = " << avg_dfs * dfs_times.size() << std::endl;
 		return ans;
 
 	}
