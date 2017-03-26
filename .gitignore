@@ -1,0 +1,15 @@
+*.ilk
+*.exe
+*.vcxproj
+*.vs
+*.vcxproj.filters
+*.pdb
+*.log
+*.db
+*.opendb
+*.sln
+/Debug/*
+/Release/*
+/Dinitz/Debug/*
+/Dinitz/Release/*
+/stress-test/*
