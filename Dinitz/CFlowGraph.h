@@ -4,7 +4,6 @@
 #include <vector>
 #include <limits>
 #include <unordered_map>
-#include <map>
 
 // Copyright by Jan RocketMan, 2017.
 
@@ -12,7 +11,7 @@
 // and sink (with indexes 0 and (N - 1) respectively), that there is no multiple edges or loops
 // and that the size of the Network doesn't exceed some predefined value N.
 
-// It is made as a map of different vertexes, that store vectors of outcoming edges. As far as for many 
+// It is made as an unordered_map of different vertexes, that store vectors of outcoming edges. As far as for many 
 // algorithms of computing max flow it is important to declare a reverse edge with zero capacity for each straight one
 // we will also save a link to reverse edge.
 
@@ -33,7 +32,7 @@ struct point {
 	std::vector<flow_edge> out;
 };
 
-// CFlowGraph store all points in unordered_map<size_t>
+// CFlowGraph store all points in unordered_map<size_t, point> and has some useful methods.
 class CFLowGraph {
 public:
 	CFLowGraph() = delete;
@@ -55,11 +54,12 @@ public:
 		return ans;
 	}
 
-	void DeclareEdge(size_t from, size_t to, int capacity)
+	// As far as we don't have multiple edges, we will not check their existance during the declaration.
+	void DeclareEdge(size_t from, size_t to, int capacity, int reverse_capacity = 0)
 	{
 		assert(from < size && to < size && from != to);
 
-		flow_edge straight(to, capacity, G[to].out.size()), reverse(from, 0, G[from].out.size());
+		flow_edge straight(to, capacity, G[to].out.size()), reverse(from, reverse_capacity, G[from].out.size());
 
 		G[from].out.push_back(straight);
 		G[to].out.push_back(reverse);
@@ -118,31 +118,11 @@ public:
 		return size;
 	}
 
-	std::pair<std::vector<size_t>, std::vector<size_t>> GetMaxIndependentSet
-	(size_t FirstPartSize)
+	std::vector<bool> GetReachableFromSource()
 	{
-		std::vector<bool> visited;
-		visited.assign(size, false);
-
-		for (auto it = G[0].out.begin(); it != G[0].out.end(); it++) {
-			if (!visited[it->end] && it->flow == 0) {
-				recurse_mark(it->end, FirstPartSize, visited);
-			}
-		}
-
-		std::vector<size_t> FirstHalf;
-		for (size_t i = 1; i < FirstPartSize; i++) {
-			if (visited[i]) {
-				FirstHalf.push_back(i);
-			}
-		}
-		std::vector<size_t> SecondHalf;
-		for (size_t i = FirstPartSize; i < size - 1; i++) {
-			if (!visited[i]) {
-				SecondHalf.push_back(i - FirstPartSize + 1);
-			}
-		}
-		return std::make_pair(FirstHalf, SecondHalf);
+		std::vector<bool> visited(size, false);
+		findReachableVertexes(0, visited);
+		return visited;
 	}
 private:
 	std::vector<flow_edge>::iterator findedge(size_t from, size_t to)
@@ -153,23 +133,13 @@ private:
 		return it;
 	}
 
-
-	void recurse_mark(size_t vertex, size_t FirstPartSize, std::vector<bool>& visited)
+	// We use a recurse dfs to find all reachable vertexes. Saturated edges are ignored.
+	void findReachableVertexes(size_t vertex, std::vector<bool>& visited)
 	{
 		visited[vertex] = true;
 		for (auto it = G[vertex].out.begin(); it != G[vertex].out.end(); it++) {
-			if (!visited[it->end]) {
-
-				bool FromLeftToRight = (vertex < FirstPartSize) &&
-					(FirstPartSize <= it->end && it->end < size - 1);
-
-				bool FromRighttoLeft = (it->end < FirstPartSize) &&
-					(FirstPartSize <= vertex && vertex < size - 1) &&
-					(it->flow == -1);
-
-				if (FromLeftToRight || FromRighttoLeft) {
-					recurse_mark(it->end, FirstPartSize, visited);
-				}
+			if (!visited[it->end] && it->capacity != it->flow) {
+				findReachableVertexes(it->end, visited);
 			}
 		}
 	}

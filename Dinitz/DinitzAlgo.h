@@ -1,7 +1,6 @@
 #pragma once
 #include "CFLowGraph.h"
 #include <queue>
-#include <iostream>
 
 // Algorithm for computing max flow in CFLowGraph presented by Y.Dinitz. Complexity is O((V^2)E).
 // It is capable only to calculate maximum flow between vertexes s(source) and t(sink), which indexes
@@ -23,9 +22,6 @@ public:
 	// It ignores all saturated edges and Returns whether the sink had been reached or not.
 	bool UpdateLayer()
 	{
-		for (size_t i = 0; i < N; i++) {
-			start[i] = G.GetBegin(i);
-		}
 		dist.assign(N, inf2);
 		std::queue<size_t> q;
 		dist[s] = 0;
@@ -34,8 +30,9 @@ public:
 		while (!q.empty()) {
 			size_t currv = q.front();
 			q.pop();
-			if (currv == t) break;
+			start[currv] = G.GetBegin(currv);
 
+			if (currv == t) break;
 			for (std::vector<flow_edge>::iterator it = G.GetBegin(currv); it != G.GetEnd(currv); it++) {
 				if (it->capacity == it->flow) continue;
 				size_t adjv = it->end;
@@ -45,7 +42,12 @@ public:
 					q.push(adjv);
 				}
 			}
+		}
 
+		while (!q.empty()) {
+			size_t currv = q.front();
+			q.pop();
+			start[currv] = G.GetBegin(currv);
 		}
 
 		return (dist[t] != inf2);
@@ -57,7 +59,7 @@ public:
 	int FindMaxFlow()
 	{
 		for (size_t i = 0; i < N; i++) {
-			start.push_back(G.GetBegin(i));
+			start.push_back(G.GetBegin(0));
 		}
 		int ans = 0, delta = 0;
 		while (UpdateLayer()) {
